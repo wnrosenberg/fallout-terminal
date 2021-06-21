@@ -1,0 +1,92 @@
+$termFg: #000000;
+$termBg: #ffffff;
+
+#screen {
+  display: flex;
+  flex-flow: row nowrap;
+  align-items: flex-end;
+}
+#spans {
+  display: flex;
+  flex-flow: column wrap;
+  max-height: 336px;
+  width: 380px;
+}
+.spans {
+  display: flex;
+  flex-flow: row wrap;
+  width: 120px;
+  margin-left: 70px;
+  line-height: 1.4;
+  letter-spacing: 1px;
+  
+  span {
+    font-size: 15px;
+    font-family: monospace;
+    color: $termFg;
+    background-color: $termBg;
+    cursor: pointer;
+    &:hover, &.hovered, &.cursored {
+      color: $termBg;
+      background-color: $termFg;
+    }
+  }
+  addr {
+    font-size: 15px;
+    font-family: monospace;
+    color: $termFg;
+    background-color: $termBg;
+    position: relative;
+    width: 5px;
+    &::before {
+      position: absolute;
+      content: attr(data-addr);
+      right: 100%;
+      color: $termFg;
+      background-color: $termBg;
+      padding-right: 5px;
+    }
+  }
+}
+#feed {
+  .feedItem {
+    font-size: 15px;
+    font-family: monospace;
+    color: $termFg;
+    background-color: $termBg;
+    // margin-bottom: 5px;
+    div:before {
+      content: ">"
+    }
+  }
+}
+#cursor {
+  font-size: 15px;
+  font-family: monospace;
+  color: $termFg;
+  background-color: $termBg;
+  margin-top: 5px;
+  &:before {
+    content: "> ";
+  }
+  &::after {
+    content: '█';
+    animation: blinkCursor 200ms linear infinite alternate;
+  }
+}
+
+
+@keyframes blinkCursor {
+  0% {
+    opacity: 0;
+  }
+  40% {
+    opacity: 0;
+  }
+  60% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 1;
+  }
+}

@@ -223,11 +223,10 @@ const {
   charsPerRow,
   t
 } = T.getDimensions();
-// console.log(cols, rows, charsPerRow, t);
+// console.log(cols, rows, charsPerRow, t); // 2 16 12 384
 
 // graphical start to memory address
-const addrStart = Math.floor(Math.random() * (65535 - t));
-
+const addrStart = Math.floor(Math.random() * 170) * t;
 
 
 // --------------------------------------------------------------

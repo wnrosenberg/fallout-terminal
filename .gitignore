@@ -1,0 +1,8 @@
+node_modules/*
+.parcel-cache/*
+dist/*
+index.html
+index.*.js
+index.*.css
+index.*.map
+

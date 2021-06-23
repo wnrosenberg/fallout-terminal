@@ -163,7 +163,7 @@ const getTerminalMsg = () => {
 };
 
 // Chunk the message into charsPerRow
-const chunkMsg = msg => {
+const chunkMsg = msg => { // added to Terminal.outputMessage()
   const re = new RegExp(`.{1,${charsPerRow}}`, "g");
   return msg.match(re);
 };
@@ -268,9 +268,6 @@ let arrowKeyDown = (e) => {
 window.addEventListener('keydown', arrowKeyDown);
 
 // CURSOR INTERACTIONS
-const updateCursorText = (text) => {
-  document.getElementById('cursor').innerHTML = text;
-}
 const markCursorIndex = (index) => {
   // Remove old cursored.
   let marked = document.querySelectorAll('.cursored');
@@ -281,10 +278,10 @@ const markCursorIndex = (index) => {
   let curSpan = document.querySelector('span[data-index=\'' + index + '\']');
   curSpan.classList.add('cursored');
 
-  // @TODO: Handle char is part of word or starts command: highlight whole word/cmd
+  // TODO: Handle char is part of word or starts command: highlight whole word/cmd
 
   // Update cursor text.
-  updateCursorText(curSpan.innerHTML);
+  T.setCursorText(curSpan.innerHTML);
 };
 const updateCursorIndex = (index, mark = true) => {
   setCursorIndex(index);
@@ -333,7 +330,7 @@ const spanMouseover = (e) => {
   } else {
     cursor = elem.innerHTML;
   }
-  updateCursorText(cursor);
+  T.setCursorText(cursor);
 }; // hover (mouseover/mouseenter)
 const spanMouseout = (e) => {
   let elem = e ? (e.target ? e.target : e) : false; // target of event or passed in manually.
@@ -378,32 +375,27 @@ const spanCharClick = (e) => {
     if (T.getLikeness(word) === word.length) {
       T.setUnlocked(word);
     } else {
-      addFeedItem(word);
+      T.appendFeedItem(word);
     }
   } else if (cmdActive) {
     let action = actions[ Math.floor(Math.random() * actions.length) ];
     if (action === 't' && lastAction !== action) {
       lastAction = 't';
-      resetTries();
+      T.resetTries();
     } else {
       lastAction = 'd';
-      removeDud();
+      T.removeDud();
     }
   } else {
-    addFeedItem(char);
+    T.appendFeedItem(char);
   }
 };
 
 let lastAction = "";
 
-const removeDud = () => {
-  console.log('remove dud');
-}
-const resetTries = () => {
-  console.log('reset tries');
-}
 
 // OUTPUT CHUNKS AS SPANS
+// createCharacterSpan moved to Dom.span()
 const createCharacterSpan = (chr, data) => {
   let el = document.createElement('span');
   el.innerHTML = chr;
@@ -567,61 +559,6 @@ const outputChunks = (chunks) => {
   });
 };
 
-// ADD NEW FEED ITEM
-const addFeedItem = (text) => {
-  let feedDiv = document.createElement('div');
-  feedDiv.classList.add('feedItem');
-  let feedChars = document.createElement('div');
-  feedChars.innerHTML = text.toUpperCase();
-  feedDiv.append(feedChars);
-  if (isAlpha(text)) {
-    let feedDenied = document.createElement('div');
-    feedDenied.innerHTML = "Entry denied.";
-    feedDiv.append(feedDenied);
-    let feedLikeness = document.createElement('div');
-    feedLikeness.innerHTML = "Likeness=" + T.getLikeness(text);
-    feedDiv.append(feedLikeness);
-  } else if (text.length > 1) {
-    // it's a command!
-  } else {
-    // it's a single character.
-    let feedError = document.createElement('div');
-    feedError.innerHTML = "Error";
-    feedDiv.append(feedError);
-  }
-  const feedContainer = document.getElementById('feed');
-  if (feedContainer.children.length > 4) {
-    document.querySelector('#feed .feedItem').remove();
-  }
-  feedContainer.append(feedDiv);
-}
-
-// ADD NEW FEED STATUS
-const addFeedStatus = (status, pretext = "") => {
-  let feedDiv = document.createElement('div');
-  feedDiv.classList.add('feedItem');
-  if (pretext) {
-    let feedText = document.createElement('div');
-    feedText.innerHTML = pretext.toUpperCase();
-    feedDiv.append(feedText);
-  }
-  let feedStatus = document.createElement('div');
-  feedStatus.innerHTML = status.toUpperCase();
-  feedDiv.append(feedStatus);
-  document.getElementById('feed').append(feedDiv);
-}
-
-// SET UNLOCKED STATE (added to class as setUnlocked)
-const setTerminalUnlocked = (word = '') => {
-  terminalState.unlocked = true;
-  addFeedStatus('UNLOCKED!!', word);
-}
-
-// SET LOCKED OUT STATE (added to class as setLockedOut)
-const setTerminalLockedOut = () => {
-  terminalState.lockedOut = true;
-  addFeedStatus('INIT LOCKOUT');
-}
 
 //
 // -------------------------------------------------------

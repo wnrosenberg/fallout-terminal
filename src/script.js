@@ -1,220 +1,47 @@
+import {
+  isAlpha,
+  // rndItem
+} from './helpers';
+
+import {
+  words as defaultWords,
+  chars,
+  actions,
+  cmdOpeners,
+  cmdClosers
+} from './data';
+
+import Terminal from './terminal';
+
 console.clear();
 
-// Default word list.
-const defaultWords = ['frost', 'ghost', 'froze', 'glaze', 'plaza', 'prose', 'floss', 'piece', 'mists', 'maize', 'mango', 'tango', 'trash', 'teach', 'lease', 'leach', 'tease', 'abode', 'blows', 'brats', 'blaze', 'broom', 'heist', 'halos', 'plots', 'tarot', 'rooms', 'terms', 'biome', 'vault'];
-
-// Allowed Characters
-const chars = ['[', '{', '(', '<', '*', '_', '/', '\\', '\'', '`', '.', '$', '=', '+', '@', '|', ';', ':', '^', '?', '#', '-', '!', '"', '>', ')', '}', ']', 'w', 'w']; // (w is replaced with a word)
-
-// Actions on commands, adjust to change frequency of tries reset / dud removed.
-const actions = ['d','d','d','d','d','d','t','t','t','d'];
-
-// Minimum characters between words.
-const minCharsBetween = 3;
-
-// COMMAND OPENERS/CLOSERS
-const cmdOpeners = ['<', '{', '[', '(']; // command opener chars
-const cmdClosers = ['>', '}', ']', ')']; // command closer chars
-
-const rndChar = (skipWords = 0) => {
-  let i;
-  if (skipWords) {
-    i = Math.floor(Math.random() * (chars.length - 2));
-  } else {
-    i = Math.floor(Math.random() * chars.length);
-  }
-  return chars[i];
-};
 
 
-// --------------------------------------------------------------
-
-/*
-  Terminal Class (WIP)
-  --------------
-  Options: {
-    difficulty: int representing required hacking skill (0-3)
-    dictionary: array of words having equal length
-  }
-*/
-class Terminal {
-  constructor(options = {}) {
-    // Terminal Data: Dataset used to build the terminal experience.
-    this.data = {
-      difficulty: 0, // Unused
-      words: [...defaultWords], // all words, modified as words chosen for display
-      chars: [...chars], // all chars
-      openers: [...cmdOpeners], // chars which open cmds
-      closers: [...cmdClosers], // chars which close cmds
-      c: 2,
-      r: 16,
-      cpr: 12,
-      t: 2 * 16 * 12,
-    };
-
-    // Update data from passed options set.
-    if (options.dictionary && options.dictionary.length) {
-      this.data.words = options.dictionary;
-    }
-    if (options.difficulty >= 0 && options.difficulty <= 3) {
-      this.data.difficulty = options.difficulty;
-    }
-
-    // Data unique to this instance of Terminal
-    this.view = {
-      msg: "", // "terminal message"
-      correct: "", // the correct word in the message
-      words: [], // "terminal words"
-      cmds: [], // "terminal commands"
-      spans: [], // characters onscreen [0..t]
-    };
-
-    // Set state of the terminal
-    this.state = {
-      correctWord: '',
-      lockedOut: false,
-      unlocked: false,
-    };
-
-    // After all inits are completed, build a new terminal message.
-    this.generateMessage();
-  }
-
-  // Terminal Words: The words onscreen.
-  getTerminalWords() {
-    return this.view.words;
-  }
-  addTerminalWord(word) {
-    if (Array.isArray(word) && word.length === 1) word = word[0];
-    this.view.words.push(word);
-  }
-  
-  // The correct word.
-  getCorrectWord() {
-    return this.view.correct;
-  }
-  setCorrectWord(word) {
-    this.view.correct = word;
-  }
-
-  // All Words
-  getAllWords() {
-    return this.data.words;
-  }
-
-  // Get message dimensions
-  getDimensions() {
-    return {
-      rows: this.data.r,
-      cols: this.data.c,
-      charsPerRow: this.data.cpr,
-      t: this.data.t,
-    };
-  }
-
-  // Generate Message with chars and words
-  getMessage() {
-    return this.view.msg;
-  }
-  generateMessage() {
-    let skippingWords = false,
-      charsBetween = 0,
-      msg = '',
-      word = '',
-      c = '',
-      lastc = '';
-
-    // While the message is less than the desired length
-    while (msg.length < this.data.t) {
-      // get a random char, include words unless there's no words left to choose from
-      c = rndChar(!this.data.words.length);
-      // console.log('msg.len='+msg.length+' c='+c+' lastc='+lastc+' skippingWords='+skippingWords+' charsBetween='+charsBetween);
-
-      // if that char starts a word
-      if (c === 'w') {
-
-        // If we just previously output a word, set a flag and output non-word character.
-        if (lastc === c) {
-          skippingWords = true;
-          c = rndChar(1);
-          // console.log('just output a word so now set c='+c);
-          msg += c;
-          // this is the first char between.
-          charsBetween++;
-
-          // If we are currently skipping words, output a character.
-        } else if (skippingWords) {
-          c = rndChar(1);
-          // console.log('skipping words so now set c='+c);
-          msg += c
-          // this is the next char between.
-          charsBetween++;
-
-          // Last char was not a word and we are not skipping words.
-        } else {
-          // if there is enough space left to output a whole word, do it.
-          if (msg.length + this.data.words[0].length < this.data.t) {
-            // remove a word from the set and append.
-            word = this.data.words.splice(Math.floor(Math.random() * this.data.words.length), 1);
-            this.addTerminalWord(word);
-            // console.log('word chosen: '+ word);
-            msg += word;
-            // at this point there are no characters since the last word
-            charsBetween = 0;
-            // skip words after this until the threshold is met
-            skippingWords = true;
-
-            // Otherwise fill the remaining space with characters.
-          } else {
-            while (msg.length < this.data.t) {
-              msg += rndChar(1);
-            }
-          }
-        }
-
-        // if this char doesnt start a word
-      } else {
-        // this is the next char between
-        if (skippingWords) charsBetween++;
-        msg += c;
-      }
-
-      // Store the char we just added.
-      lastc = c;
-
-      // If we were skipping words, and there are now enough characters following the last word...
-      if (skippingWords && charsBetween > minCharsBetween) {
-        // start allowing words again.
-        // console.log('were skipping but charsBetween > '+minCharsBetween+' so no longer skipping words after this');
-        skippingWords = false;
-      }
-    }
-    
-    // From the set of chosen words, choose the correct word.
-    let terminalWords = this.getTerminalWords();
-    this.setCorrectWord(terminalWords[ Math.floor(Math.random() * terminalWords.length) ]);
-    
-    // set locally
-    this.view.msg = msg.toUpperCase();
-    
-    console.log('Terminal.generateMessage got message with words: ' +terminalWords+' and correct word: '+this.getCorrectWord());
-  }
-  
-  // Set Terminal State
-  setUnlocked(word = '') {
-    this.state.unlocked = true;
-    addFeedStatus('UNLOCKED!!', word);
-  }
-  setLockedOut = () => {
-    this.state.lockedOut = true;
-    addFeedStatus('INIT LOCKOUT');
-  }
+const rndChar = (skipWords = 0) => { // added to class
+  let filter = skipWords ? [char=>char!=='w'] : [];
+  return rndItem(chars, filter);
 }
 
+
 // --------------------------------------------------------------
 
+
+
+// --------------------------------------------------------------
+
+// Set defaults for the Terminal.
+// TODO: after class complete, change to "options"
+const defaults = {
+  minCharsBetween: 3,
+};
+const options = {
+
+};
+
 // Create new Terminal
-const T = new Terminal();
+const T = new Terminal(options);
+
+// --------------------------------------------------------------
 
 // Get data for methods not yet moved to the class.
 const {
@@ -239,15 +66,6 @@ const addWordToTerminal = (word) => {
 }
 const getTerminalWords = () => terminalWords;
 
-const getLikeness = (word) => {
-  let likeness = 0;
-  let correct = T.getCorrectWord();
-  console.log('get likeness: word, correct', word, correct);
-  for (let i = 0; i < word.length; i++) {
-    if (word[i] === correct[i]) likeness++;
-  }
-  return likeness;
-}
 
 // Choose a random character, optionally skipping words.
 
@@ -264,16 +82,7 @@ const terminalState = {
 };
 
 // True if str is alphabetical (a-z)
-const isAlpha = str => {
-  var code, i, len;
-  for (i = 0, len = str.length; i < len; i++) {
-    code = str.charCodeAt(i);
-    if (!(code > 64 && code < 91) && !(code > 96 && code < 123)) {
-      return false;
-    }
-  }
-  return true;
-};
+
 
 // Get t characters of terminal code, including words.
 const getTerminalMsg = () => {
@@ -343,7 +152,7 @@ const getTerminalMsg = () => {
     lastc = c;
 
     // If we were skipping words, and there are now enough characters following the last word...
-    if (skippingWords && charsBetween > minCharsBetween) {
+    if (skippingWords && charsBetween > defaults.minCharsBetween) {
       // start allowing words again.
       // console.log('were skipping but charsBetween > '+minCharsBetween+' so no longer skipping words after this');
       skippingWords = false;
@@ -566,8 +375,8 @@ const spanCharClick = (e) => {
   let cmdActive = e.target.getAttribute('data-cmd-active') == "1";
   // if span is part of a word, trigger the word action
   if (wordIndex) {
-    if (getLikeness(word) === word.length) {
-      setTerminalUnlocked(word);
+    if (T.getLikeness(word) === word.length) {
+      T.setUnlocked(word);
     } else {
       addFeedItem(word);
     }
@@ -770,7 +579,7 @@ const addFeedItem = (text) => {
     feedDenied.innerHTML = "Entry denied.";
     feedDiv.append(feedDenied);
     let feedLikeness = document.createElement('div');
-    feedLikeness.innerHTML = "Likeness=" + getLikeness(text);
+    feedLikeness.innerHTML = "Likeness=" + T.getLikeness(text);
     feedDiv.append(feedLikeness);
   } else if (text.length > 1) {
     // it's a command!
